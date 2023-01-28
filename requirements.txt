@@ -1,0 +1,6 @@
+Required Packages
+openai
+SpeechRecognition
+pyttsx3
+
+You can you pip install *** for required packages
