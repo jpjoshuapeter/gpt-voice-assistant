@@ -1,9 +1,6 @@
-from gtts import gTTS
 import os
 import openai
 import pyttsx3
-import pyaudio
-import pygame
 import speech_recognition as sr
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
