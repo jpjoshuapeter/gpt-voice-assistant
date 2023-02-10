@@ -15,6 +15,7 @@ def audio_response(answer):
     engine = pyttsx3.init()
     voices = engine.getProperty('voices')
     engine.setProperty('voice', voices[1].id)
+    engine.setProperty('rate', 300)
     engine.say(answer)
     engine.runAndWait()
 
@@ -287,7 +288,7 @@ class App(ctk.CTk):
             master=self.frame, text='Speak', command=ai_button)
         self.button.pack(pady=10, padx=8)
 
-    startup_audio()
+        self.after(500, startup_audio)
 
 
 app = App()
