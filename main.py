@@ -1,12 +1,13 @@
+import ctypes
+import datetime
 import os
 
-import datetime
 import customtkinter as ctk
 import openai
 import pyttsx3
 import requests
 import speech_recognition as sr
-from cred import phillipshue, govee
+from cred import govee, phillipshue
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
@@ -37,7 +38,7 @@ def startup_audio():
     audio_response("How can i Help you")
 
 
-def ai_prompt():
+def takeCommand():
     """
     Converts user's prompt to text 
     """
@@ -221,21 +222,33 @@ class GoveeLights:
 
 
 def script():
-    prompt = ai_prompt()
+    """
+    Prompt and action
+    """
+    prompt = takeCommand().lower()
+
     if str("GPT") in prompt:
         gpt_prompt = prompt.replace("ask GPT", "")
         # response = gpt_prompt
         response = gpt_response(gpt_prompt)
+
     elif str("work mode") in prompt:
         Phillipshue_on().lights()
         GoveeLights().light_on()
-
         response = 'I have switched to work mode'
 
     elif str("lights off") in prompt:
         Phillipshue_off().lights()
         GoveeLights().light_off()
         response = 'I have turned off the lights'
+
+    elif str('how are you') in prompt:
+        response = "I am fine, Thank you"
+
+    elif str('lock pc') in prompt:
+        audio_response("locking your pc")
+        ctypes.windll.user32.LockWorkStation()
+
     else:
         response = "I can not help you at this time"
 
