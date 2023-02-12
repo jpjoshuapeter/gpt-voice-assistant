@@ -7,7 +7,7 @@ import openai
 import pyttsx3
 import requests
 import speech_recognition as sr
-from cred import govee, phillipshue
+from cred import Weather, govee, phillipshue
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
@@ -219,6 +219,70 @@ class GoveeLights:
         response1 = requests.put(url, headers=headers, json=body)
 
         return response1
+
+
+class WeatherApi:
+
+    def __init__(self):
+        self.apikey = Weather.API_KEY
+        self.url = 'https://api.tomorrow.io/v4/weather'
+
+    def realTimeWeather(self, city='bartlesville'):
+        apikey = self.apikey
+        headers = {
+            "accept": "application/json"
+        }
+
+        data = {
+            'location': city,
+            'units': 'imperial',
+            'apikey': apikey
+        }
+
+        url = f'{self.url}/realtime'
+
+        r = requests.get(
+            url, params=data, headers=headers
+        )
+
+        response = r.json()
+
+        temperature = response['data']['values']['temperature']
+
+        precipitation = response['data']['values']['precipitationProbability']
+
+        return temperature, precipitation
+
+    def morningWeather(self, city='bartlesville'):
+        apikey = self.apikey
+        headers = {
+            "accept": "application/json"
+        }
+
+        data = {
+            'location': city,
+            'units': 'imperial',
+            'timesteps': '1h',
+            'apikey': apikey
+
+        }
+
+        url = f'{self.url}/forecast'
+
+        r = requests.get(
+            url, params=data, headers=headers
+        )
+
+        response = r.json()
+
+        for hour in response["timelines"]["hourly"]:
+            if hour["time"] == "2023-02-12T13:00:00Z":
+                temperature = hour["values"]["temperature"]
+                break
+
+        # print(r.url)
+
+        return temperature
 
 
 def script():

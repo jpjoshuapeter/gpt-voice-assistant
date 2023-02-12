@@ -5,3 +5,6 @@ class phillipshue:
 class govee:
     API_KEY = 'govee api key'
 
+
+class Weather:
+    API_KEY = 'API_key'
