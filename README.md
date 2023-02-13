@@ -19,7 +19,7 @@ This is a voice-based AI assistant that can answer your questions and interact w
 
 ## Installation
 
-1.  Clone the repository: `git clone https://github.com/<your-username>/GPT-Speech-Assistant`
+1.  Clone the repository: `git clone https://github.com/jpjoshuapeter/GPT-Speech-Assistant`
 2.  Install the required packages: `pip install -r requirements.txt`
 3.  Add your OpenAI API Key to your environment variables as `OPENAI_API_KEY`
 
