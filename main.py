@@ -1,27 +1,38 @@
 import ctypes
 import datetime
 import os
+import subprocess
 
 import customtkinter as ctk
 import openai
 import pyttsx3
 import requests
+import services.Phillipshue as ph
 import speech_recognition as sr
-from cred import Weather, govee, phillipshue
+from cred import Files, Weather, govee, phillipshue
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
+ctk.set_appearance_mode('dark')
+ctk.set_default_color_theme('dark-blue')
+
 
 def audio_response(answer):
+    """
+    TTS for response
+    """
     engine = pyttsx3.init()
     voices = engine.getProperty('voices')
     engine.setProperty('voice', voices[1].id)
-    engine.setProperty('rate', 300)
+    engine.setProperty('rate', 200)
     engine.say(answer)
     engine.runAndWait()
 
 
 def startup_audio():
+    """
+    Audio to be played when starting the application
+    """
     hour = int(datetime.datetime.now().hour)
     if hour >= 0 and hour < 12:
         audio_response("Good Morning Sir !")
@@ -32,10 +43,9 @@ def startup_audio():
     else:
         audio_response("Good Evening Sir !")
 
-    assname = ("Artemis 1 point o")
-    audio_response("I am your Assistant")
-    audio_response(assname)
-    audio_response("How can i Help you")
+    assname = "Artemis"
+    audio_response("I am your Assistant" +
+                   f"{assname} 1 point o, How can I help you today?")
 
 
 def takeCommand():
@@ -44,17 +54,26 @@ def takeCommand():
     """
     r = sr.Recognizer()
     with sr.Microphone() as source:
-        print("Ask your question:")
+        # print("Ask your question:")
         r.pause_threshold = 1
         audio_text = r.listen(source)
-        print("Thank you")
+        # print("Thank you")
 
-    prompt = r.recognize_google(audio_text, show_all=False)
+    try:
+        prompt = r.recognize_google(audio_text, show_all=False)
+
+    except Exception as e:
+        print(e)
+        print("Say that again please")
+        return "None"
 
     return prompt
 
 
 def gpt_response(gpt_prompt):
+    """
+    Uses OpenAI api to get response from GPT3
+    """
     openai.api_key = os.getenv("OPENAI_API_KEY")
     response = openai.Completion.create(
         engine="text-davinci-002",
@@ -71,95 +90,10 @@ def gpt_response(gpt_prompt):
     return gpt_answer
 
 
-def audio_response(answer):
-    engine = pyttsx3.init()
-    voices = engine.getProperty('voices')
-    engine.setProperty('voice', voices[1].id)
-    engine.say(answer)
-    engine.runAndWait()
-
-
-class Phillipshue_on:
-
-    def __init__(self):
-
-        username = phillipshue.username
-        ip = phillipshue.ip
-        self.base_url = f'https://{ip}/api/{username}'
-
-    def lights(self):
-
-        def light1(self):
-
-            url = f'{self.base_url}/lights/1/state'
-            data = {"on": True, "sat": 11, "bri": 254, "hue": 11013}
-
-            response = requests.put(url, verify=False, json=data)
-
-            return response
-
-        def light2(self):
-
-            url = f'{self.base_url}/lights/2/state'
-            data = {"on": True, "sat": 11, "bri": 254, "hue": 11013}
-
-            response = requests.put(url, verify=False, json=data)
-
-            return response
-
-        def light3(self):
-
-            url = f'{self.base_url}/lights/11/state'
-            data = {"on": True, "sat": 11, "bri": 254, "hue": 11013}
-
-            response = requests.put(url, verify=False, json=data)
-
-            return response
-
-        return light1(self), light2(self), light3(self)
-
-
-class Phillipshue_off:
-
-    def __init__(self):
-
-        username = phillipshue.username
-        ip = phillipshue.ip
-        self.base_url = f'https://{ip}/api/{username}'
-
-    def lights(self):
-
-        def light1(self):
-
-            url = f'{self.base_url}/lights/1/state'
-            data = {"on": False, "sat": 11, "bri": 254, "hue": 11013}
-
-            response = requests.put(url, verify=False, json=data)
-
-            return response
-
-        def light2(self):
-
-            url = f'{self.base_url}/lights/2/state'
-            data = {"on": False, "sat": 11, "bri": 254, "hue": 11013}
-
-            response = requests.put(url, verify=False, json=data)
-
-            return response
-
-        def light3(self):
-
-            url = f'{self.base_url}/lights/11/state'
-            data = {"on": False, "sat": 11, "bri": 254, "hue": 11013}
-
-            response = requests.put(url, verify=False, json=data)
-
-            return response
-
-        return light1(self), light2(self), light3(self)
-
-
 class GoveeLights:
+    """
+    Turn on and off Govee lights
+    """
 
     def __init__(self):
         self.apikey = govee.API_KEY
@@ -221,6 +155,17 @@ class GoveeLights:
         return response1
 
 
+def shutdown():
+    """
+    Shutdown process of the device and lights
+    """
+    audio_response('intializing shutdown')
+    ph.Phillipshue_off().lights()
+    GoveeLights().light_off()
+    ph.bedroomLights().lights()
+    subprocess.call('shutdown /p /f')
+
+
 class WeatherApi:
 
     def __init__(self):
@@ -228,6 +173,10 @@ class WeatherApi:
         self.url = 'https://api.tomorrow.io/v4/weather'
 
     def realTimeWeather(self, city='bartlesville'):
+        """
+        Gets real time weather
+        """
+
         apikey = self.apikey
         headers = {
             "accept": "application/json"
@@ -254,6 +203,9 @@ class WeatherApi:
         return temperature, precipitation
 
     def morningWeather(self, city='bartlesville'):
+        """
+        Get weather data for 7 am central time the following day
+        """
         apikey = self.apikey
         headers = {
             "accept": "application/json"
@@ -295,37 +247,85 @@ def script():
         gpt_prompt = prompt.replace("ask GPT", "")
         # response = gpt_prompt
         response = gpt_response(gpt_prompt)
+        audio_response(response)
 
-    elif str("work mode") in prompt:
-        Phillipshue_on().lights()
+    elif str("work mode") in prompt or str("lights on") in prompt:
+        ph.Phillipshue_on().lights()
         GoveeLights().light_on()
         response = 'I have switched to work mode'
+        audio_response(response)
 
     elif str("lights off") in prompt:
-        Phillipshue_off().lights()
+        ph.Phillipshue_off().lights()
         GoveeLights().light_off()
         response = 'I have turned off the lights'
+        audio_response(response)
 
     elif str('how are you') in prompt:
         response = "I am fine, Thank you"
+        audio_response(response)
+
+    elif str('discord') in prompt:
+        os.startfile(
+            Files.discord)
+        response = 'I have opened discord'
+        audio_response(response)
 
     elif str('lock pc') in prompt:
         audio_response("locking your pc")
         ctypes.windll.user32.LockWorkStation()
 
+    elif str('current weather') in prompt:
+        temperature, precipitation = WeatherApi().realTimeWeather()
+        response = f'It is currently {temperature} degrees with a {precipitation} percent chance of rain.'
+        audio_response(response)
+
+    elif str('tomorrow morning') in prompt:
+        temperature = WeatherApi().morningWeather()
+        response = f'It will be {temperature} degrees at 7 tomorrow morning.'
+        audio_response(response)
+
+    elif str('shutdown') in prompt or str('shut down') in prompt:
+        shutdown()
+        response = 'Initiating shutdown'
+
+    elif "make a note" in prompt:
+        """
+        currently not working
+        """
+        audio_response("What should i write, sir")
+        note = takeCommand()
+        file = open('artemis.txt', 'w')
+        audio_response("Sir, Should i include date and time")
+        snfm = takeCommand()
+        if 'yes' in snfm or 'sure' in snfm:
+            strTime = datetime.datetime.now().strftime("% H:% M:% S")
+            file.write(strTime)
+            file.write(" :- ")
+            file.write(note)
+        else:
+            file.write(note)
+        response = 'I have finished the note'
+        audio_response(response)
+
     else:
         response = "I can not help you at this time"
+        audio_response(response)
 
-    audio_response(response)
+    with open("conversation_history.txt", "a") as history_file:
+        # Keeps track of the current conversation and 
+        # adds it to the conversation history txt file
+        now = datetime.datetime.now()
+        history_file.write(
+            "\n" + f'{now}' + "\n" + f'Q: {prompt}' + "\n" + f'R: {response}' + "\n")
 
     return prompt, response
 
 
-ctk.set_appearance_mode('dark')
-ctk.set_default_color_theme('dark-blue')
-
-
 class App(ctk.CTk):
+    """
+    Builds GUI with Speak Button and shows response
+    """
 
     def __init__(self):
         super().__init__()
@@ -336,7 +336,7 @@ class App(ctk.CTk):
         self.grid_rowconfigure(0, weight=1)  # configure grid system
         self.grid_columnconfigure(0, weight=1)
 
-        self.frame = ctk.CTkFrame(master=self)
+        self.frame = ctk.CTkScrollableFrame(master=self)
         self.frame.pack(pady=30, padx=30, fill='both', expand=True)
 
         self.label = ctk.CTkLabel(
@@ -344,15 +344,6 @@ class App(ctk.CTk):
         self.label.pack(pady=12, padx=10)
 
         def ai_button():
-            self.text_1 = ctk.CTkTextbox(
-                master=self.frame, width=400, height=100)
-            self.text_1.pack(pady=15, padx=15, )
-            self.text_1.insert("0.0", 'Ask your question:')
-            self.text_1.configure(
-                state="disabled",
-                font=ctk.CTkFont(size=20, weight="normal")
-            )
-
             prompt, response = script()
 
             self.text_2 = ctk.CTkTextbox(
@@ -369,5 +360,4 @@ class App(ctk.CTk):
 
 
 app = App()
-
 app.mainloop()

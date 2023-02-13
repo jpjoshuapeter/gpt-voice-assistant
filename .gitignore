@@ -198,5 +198,8 @@ $RECYCLE.BIN/
 
 # ignored files
 credentials.py
+ai.py
+audio.py
+audio clips
 
 # End of https://www.toptal.com/developers/gitignore/api/python,windows

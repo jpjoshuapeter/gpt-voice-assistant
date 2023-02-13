@@ -9,3 +9,7 @@ class govee:
 
 class Weather:
     API_KEY = 'API_key'
+
+
+class Files:
+    discord = 'discord.exe or shortcut location'
