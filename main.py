@@ -2,6 +2,7 @@ import ctypes
 import datetime
 import os
 import subprocess
+import time
 
 import customtkinter as ctk
 import openai
@@ -163,6 +164,7 @@ def shutdown():
     ph.Phillipshue_off().lights()
     GoveeLights().light_off()
     ph.bedroomLights().lights()
+    time.sleep(15)
     subprocess.call('shutdown /p /f')
 
 
@@ -313,7 +315,7 @@ def script():
         audio_response(response)
 
     with open("conversation_history.txt", "a") as history_file:
-        # Keeps track of the current conversation and 
+        # Keeps track of the current conversation and
         # adds it to the conversation history txt file
         now = datetime.datetime.now()
         history_file.write(
