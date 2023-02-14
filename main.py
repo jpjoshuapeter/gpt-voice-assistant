@@ -10,7 +10,7 @@ import pyttsx3
 import requests
 import services.Phillipshue as ph
 import speech_recognition as sr
-from cred import Files, Weather, govee, phillipshue
+from credentials import Files, Weather, govee
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
@@ -51,7 +51,7 @@ def startup_audio():
 
 def takeCommand():
     """
-    Converts user's prompt to text 
+    Converts user's prompt to text
     """
     r = sr.Recognizer()
     with sr.Microphone() as source:
@@ -228,15 +228,82 @@ class WeatherApi:
         )
 
         response = r.json()
-
+        tomorrow = (datetime.datetime.now() +
+                    datetime.timedelta(1)).strftime("%Y-%m-%d")
         for hour in response["timelines"]["hourly"]:
-            if hour["time"] == "2023-02-12T13:00:00Z":
+            if hour["time"] == f"{tomorrow}T13:00:00Z":
                 temperature = hour["values"]["temperature"]
                 break
 
         # print(r.url)
 
         return temperature
+
+    def dailyWeather(self, city='bartlesville'):
+        """
+        Getting the forecast for the current day
+        """
+        apikey = self.apikey
+        headers = {
+            "accept": "application/json"
+        }
+
+        data = {
+            'location': city,
+            'units': 'imperial',
+            'timesteps': '1d',
+            'apikey': apikey
+
+        }
+
+        url = f'{self.url}/forecast'
+
+        r = requests.get(
+            url, params=data, headers=headers
+        )
+
+        response = r.json()
+
+        today = (datetime.datetime.now()).strftime("%Y-%m-%d")
+
+        for day in response["timelines"]["daily"]:
+            if day["time"] == f"{today}T00:00:00Z":
+                temperatureMax = day["values"]["temperatureMax"]
+                percentageRain = day["values"]["precipitationProbabilityMax"]
+                totalRain = day["values"]["rainAccumulationSum"]
+                break
+
+        return temperatureMax, percentageRain, totalRain
+
+
+def weatherReport():
+    high_temp, rain_chance, rain_amount = WeatherApi().dailyWeather()
+
+    response = "Good Morning Sir, The weather forecast for today is looking "
+    if high_temp >= 85:
+        response += "hot and sunny with a high of " + \
+            str(high_temp) + "°F. "
+    elif high_temp >= 70:
+        response += "pleasant with a high of " + str(high_temp) + "°F. "
+    else:
+        response += "chilly with a high of " + str(high_temp) + "°F. "
+
+    if rain_chance >= 50:
+        response += "There's a " + \
+            str(rain_chance) + "% chance of rain and "
+        response += "a total of " + str(rain_amount) + " inches expected. "
+        response += "Don't forget your umbrella!"
+    elif rain_chance >= 20:
+        response += "There's a slight chance of rain with a " + \
+            str(rain_chance) + "% chance, "
+        response += "and a total of " + \
+            str(rain_amount) + " inches expected. "
+        response += "It might be a good idea to pack a light jacket just in case."
+    else:
+        response += "It looks like it will stay dry with only a " + \
+            str(rain_chance) + "% chance of rain. "
+        response += "Enjoy the sunshine!"
+    return response
 
 
 def script():
@@ -291,9 +358,15 @@ def script():
         shutdown()
         response = 'Initiating shutdown'
 
+    elif str('morning') in prompt:
+        ph.Phillipshue_on().lights()
+        GoveeLights().light_on()
+        response = weatherReport()
+        audio_response(response)
+
     elif "make a note" in prompt:
         """
-        currently not working
+        ! currently not working
         """
         audio_response("What should i write, sir")
         note = takeCommand()
@@ -358,7 +431,7 @@ class App(ctk.CTk):
             master=self.frame, text='Speak', command=ai_button)
         self.button.pack(pady=10, padx=8)
 
-        self.after(500, startup_audio)
+        # self.after(500, startup_audio)
 
 
 app = App()
