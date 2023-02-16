@@ -163,7 +163,7 @@ def shutdown():
     audio_response('intializing shutdown')
     ph.Phillipshue_off().lights()
     GoveeLights().light_off()
-    ph.bedroomLights().lights()
+    ph.bedroomLightsON().lights()
     time.sleep(15)
     subprocess.call('shutdown /p /f')
 
@@ -359,6 +359,7 @@ def script():
         response = 'Initiating shutdown'
 
     elif str('morning') in prompt:
+        ph.bedroomLightsOff().lights()
         ph.Phillipshue_on().lights()
         GoveeLights().light_on()
         response = weatherReport()
@@ -382,6 +383,9 @@ def script():
             file.write(note)
         response = 'I have finished the note'
         audio_response(response)
+
+    elif 'exit' in prompt:
+        exit()
 
     else:
         response = "I can not help you at this time"
